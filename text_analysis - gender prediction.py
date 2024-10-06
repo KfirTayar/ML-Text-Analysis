@@ -16,13 +16,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 # ---------------------------------------
 
-# ------------- visualizations:
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
-
 #--------- Text analysis and Hebrew text analysis imports:
 #vectorizers:
-from sklearn.feature_extraction import text
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 #regular expressions:
