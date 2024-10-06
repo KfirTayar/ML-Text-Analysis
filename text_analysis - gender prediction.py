@@ -18,6 +18,7 @@ from sklearn.tree import DecisionTreeClassifier
 
 #--------- Text analysis and Hebrew text analysis imports:
 #vectorizers:
+from sklearn.feature_extraction import text
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 #regular expressions:
