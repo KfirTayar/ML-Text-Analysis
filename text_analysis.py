@@ -30,13 +30,15 @@ test_filename  = 'corpus_for_test.csv'
 df_train = pd.read_csv(train_filename, index_col=None, encoding='utf-8')
 df_test  = pd.read_csv(test_filename, index_col=None, encoding='utf-8')
 
+st.title("Corpus")
+
 st.subheader("Train Data Preview")
 st.write(df_train.head())
-st.write("Train DF Shape:", df_train.shape)
+st.write("Shape of Train DF:", df_train.shape)
 
 st.subheader("Test Data Preview")
 st.write(df_test.head())
-st.write("Test DF Shape:", df_test.shape)
+st.write("Shape of Test DF:", df_test.shape)
 
 st.subheader("Train Df describe")
 st.write(df_train.describe())
@@ -56,16 +58,18 @@ def makeTokenization(story):
 
 # Testing the tokenization function
 st.subheader("Tokenization")
-a = "123123טסט טסט טסט ;;;"
-st.write("Test Tokenization function on this text:", a)
-st.write("Output:", makeTokenization("טסט טסט טסט123123 ;;;"))
+plain_text = 'טסט d sss sd!!3 sdcsd טסט dd12!!2 test טסט 123טסט טסט טסט ;;;'
+test = f'<span style="color: red; font-weight: bold;"> טסט d ss sd!3 sdsd טסט dd12!!2 test טסט 123טסט טסט טסט ;;; </span>'
+inputTxt = f'Test Tokenization function on this input: {test}'
+st.markdown(inputTxt, unsafe_allow_html=True)
+st.write("Output:", makeTokenization(plain_text))  
 
 # Make the gender col to numeric values
 df_train['gender'] = df_train['gender'].map({'f':0, 'm':1})
 
 st.title("Vectorization")
 
-st.subheader("Trainset Vectorization")
+#"Trainset Vectorization"
 # Create the vectorizer
 vec = TfidfVectorizer(tokenizer=makeTokenization, max_features=3000, min_df=2, max_df=0.95, ngram_range=(1,2))
 X_train = vec.fit_transform(df_train.story)
@@ -73,16 +77,15 @@ y_train = df_train.gender
 
 # Normalize
 X_train = preprocessing.normalize(X_train, norm='l2')
-st.write(X_train[:3])
 
-st.subheader("Testset Vectorization")
+#"Testset Vectorization"
 X_test = vec.transform(df_test.story)
 
 # Normalize
 X_test = preprocessing.normalize(X_test, norm='l2')
-st.write(X_test[:3])
+st.write("Create the vectorizer & Normalize X_train and X_test ...")
 
-st.title("Model Selection & Model Evaluation")
+st.title("Model Selection & Evaluation")
 
 st.subheader("Cross Validation & GridSearchCV")
 
@@ -166,15 +169,15 @@ def grid_search_model(model, clf, X_train, y_train):
     GS_model.fit(X_train, y_train)
     return GS_model
 
-# Create a list of models to chack
-model_names = [
-    'KNN',
-    'DT',
-    'MLP',
-    'LinearSVC',
-    'Perceptron',
-    'SVM'
-]
+
+# List of model names
+selected_model_list = ['KNN', 'DT', 'MLP', 'LinearSVC', 'Perceptron', 'SVM']
+
+# Create a radio button for selecting a model
+selected_model = st.radio("Select a model", selected_model_list, horizontal=True)
+
+# Create a list with the selected model
+selected_model_list = [selected_model]
 
 # Create variables to chack which model is the best for text prediction
 f1_acc_li = []
@@ -183,19 +186,19 @@ bestModel = None
 
 # --------------------------------------------------------------------------------- #
 
-for model in range(len(model_names)):
-    clf = train_model(model_names[model], X_train, y_train)
-    GS_model = grid_search_model(model_names[model], clf, X_train, y_train)
-    st.subheader(f'Model: {model_names[model]}\n')
+for model in range(len(selected_model_list)):
+    clf = train_model(selected_model_list[model], X_train, y_train)
+    GS_model = grid_search_model(selected_model_list[model], clf, X_train, y_train)
+    st.subheader(f'Model: {selected_model_list[model]}\n')
     st.write(f'Best params: {GS_model.best_params_}\n')
     
     model_cv_score = cross_val_score(GS_model.best_estimator_, X_train, y_train, scoring=metrics.make_scorer(f1_score, average='macro'), cv=5)
-    st.write(f'{model_names[model]} Cross Validation Scores: {model_cv_score}\n')
-    st.write(f'{model_names[model]} Mean Accuracy: {model_cv_score.mean():.4f}\n')
+    st.write(f'{selected_model_list[model]} Cross Validation Scores: {model_cv_score}\n')
+    st.write(f'{selected_model_list[model]} Mean Accuracy: {model_cv_score.mean():.4f}\n')
     
     if(model_cv_score.mean() > bestScore):
         bestScore = model_cv_score.mean()
-        bestModel = model_names[model]
+        bestModel = selected_model_list[model]
     
     # Prediction
     y_pred = clf.predict(X_test)
@@ -203,7 +206,7 @@ for model in range(len(model_names)):
     df_test['predicted_category'] = y_pred
     df_test['predicted_category'] = df_test['predicted_category'].replace({0:'f', 1:'m'})
     
-    if (bestModel == model_names[model]):
+    if (bestModel == selected_model_list[model]):
         df_predicted = df_test[['test_example_id', 'predicted_category']]
     
     st.write("First 5 predictions:\n", df_test.head())
@@ -221,9 +224,9 @@ for model in range(len(model_names)):
     st.markdown(f"**y_pred values**:\n {yPredValues}", unsafe_allow_html=True)
     st.write('---------------------------------------------------------------')
 
-st.write("The best model is:", bestModel)
-st.write("The model f1 score is", bestScore)
+st.write("Model:", bestModel)
+st.write("Model f1 score:", bestScore)
 
-# This is a DF that presents the gender predictions by the best model
-st.write("Prediction of the best model")
+# This is a DF that presents the gender predictions by the model
+st.write("Prediction of the model")
 st.write(df_predicted.head(10))
